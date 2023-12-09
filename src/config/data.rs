@@ -8,6 +8,8 @@ pub struct ConfigData {
     pub danser_path: String,
     pub open_tablet_driver_path: String,
     pub osu_trainer_path: String,
+    pub danser_out_dir: String,
+    pub osu_trainer_setting_name: String,
 }
 
 impl ConfigData {
@@ -29,6 +31,12 @@ impl ConfigData {
             danser_path: String::from(""),
             open_tablet_driver_path: String::from(""),
             osu_trainer_path: String::from(""),
+            danser_out_dir: Path::new(&app_data_location)
+                .join("oau!")
+                .join("Danser recordings")
+                .to_string_lossy()
+                .into_owned(),
+            osu_trainer_setting_name: String::from("default"),
         }
     }
 
