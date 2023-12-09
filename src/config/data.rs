@@ -9,7 +9,7 @@ pub struct ConfigData {
     pub open_tablet_driver_executable_path: String,
     pub osu_trainer_executable_path: String,
     pub danser_out_dir: String,
-    pub osu_trainer_setting_name: String,
+    pub danser_settings_name: String,
     pub replays_dir: String,
 }
 
@@ -42,7 +42,7 @@ impl ConfigData {
                 .join("Replays")
                 .to_string_lossy()
                 .into_owned(),
-            osu_trainer_setting_name: String::from("default"),
+            danser_settings_name: String::from("default"),
         }
     }
 

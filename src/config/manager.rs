@@ -10,7 +10,7 @@ pub struct LauncherConfig<'a> {
 }
 
 impl<'a> LauncherConfig<'a> {
-    pub fn new(file_path: &'a str) -> LauncherConfig<'a> {
+    pub fn from(file_path: &'a str) -> LauncherConfig<'a> {
         if LauncherConfig::config_file_exists(file_path) {
             println!("Config file exists, reading config file.");
 
