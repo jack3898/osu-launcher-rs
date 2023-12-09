@@ -2,8 +2,12 @@ mod config;
 mod util;
 
 use config::manager::LauncherConfig;
-use std::process::{Child, Command};
-use util::file::file_exists;
+use notify::{Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
+use std::{
+    path::Path,
+    process::{Child, Command},
+};
+use util::file::{file_exists, path_exists};
 
 fn main() {
     let config = LauncherConfig::new("./launcher_config.json");
@@ -26,14 +30,46 @@ fn main() {
         process_list.push(rewind_process);
     }
 
-    if file_exists(&config.config.danser_executable_path) {
-        let danser_process = Command::new(config.config.danser_executable_path)
-            .arg("--record")
-            .arg("--settings=\"Fast\"")
-            .spawn()
-            .expect("Failed to launch Danser");
+    // watcher is declared here because it needs to be in scope for the lifetime of the program
+    let mut _watcher: Option<RecommendedWatcher> = None;
 
-        process_list.push(danser_process);
+    if file_exists(&config.config.danser_executable_path)
+        && path_exists(&config.config.danser_out_dir)
+    {
+        let danser_executable_path = config.config.danser_executable_path.clone();
+
+        _watcher = Some(
+            notify::recommended_watcher(move |res: Result<Event, _>| match res {
+                Ok(event) => match event.kind {
+                    EventKind::Create(_) => {
+                        let full_path = event.paths[0].to_str().unwrap();
+                        let file_name =
+                            Path::new(&full_path).file_name().unwrap().to_str().unwrap();
+
+                        println!("Rendering replay: {}", file_name);
+
+                        Command::new(danser_executable_path.clone())
+                            .arg(format!("--out={}", file_name))
+                            .arg("--settings=default")
+                            .arg(format!("--replay={}", full_path))
+                            .spawn()
+                            .expect("Failed to launch Danser");
+                    }
+                    _ => (),
+                },
+                Err(e) => panic!("Error watching directory: {}", e),
+            })
+            .unwrap(),
+        );
+
+        let replays_dir = Path::new(&config.config.replays_dir);
+
+        if let Some(ref mut watcher_value) = _watcher {
+            match watcher_value.watch(replays_dir, RecursiveMode::Recursive) {
+                Ok(_) => println!("Watching directory: {:?}", replays_dir),
+                Err(e) => panic!("Error watching directory: {}", e),
+            }
+        }
     }
 
     if file_exists(&config.config.open_tablet_driver_executable_path) {

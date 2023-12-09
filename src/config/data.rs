@@ -10,6 +10,7 @@ pub struct ConfigData {
     pub osu_trainer_executable_path: String,
     pub danser_out_dir: String,
     pub osu_trainer_setting_name: String,
+    pub replays_dir: String,
 }
 
 impl ConfigData {
@@ -34,6 +35,11 @@ impl ConfigData {
             danser_out_dir: Path::new(&app_data_location)
                 .join("osu!")
                 .join("Danser recordings")
+                .to_string_lossy()
+                .into_owned(),
+            replays_dir: Path::new(&app_data_location)
+                .join("osu!")
+                .join("Replays")
                 .to_string_lossy()
                 .into_owned(),
             osu_trainer_setting_name: String::from("default"),
