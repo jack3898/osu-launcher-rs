@@ -2,97 +2,119 @@ mod config;
 mod util;
 
 use config::manager::LauncherConfig;
-use notify::{Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
-use std::{
-    path::Path,
-    process::{Child, Command},
-};
+use futures::future::join_all;
+use notify::{Event, EventKind, RecursiveMode, Watcher};
+use std::{path::Path, process::Command};
 use util::file::{file_exists, path_exists};
 use util::win::is_async_key_pressed;
 
-fn main() {
+#[tokio::main]
+async fn main() {
     // watcher is declared here because it needs to be in scope for the lifetime of the program
-    let mut _watcher: Option<RecommendedWatcher> = None;
-    let mut process_list: Vec<Child> = vec![];
+    let mut process_list = Vec::new();
     let launcher = LauncherConfig::from("./launcher_config.json");
 
     if file_exists(&launcher.config.osu_executable_path) {
-        let osu_process = Command::new(launcher.config.osu_executable_path)
-            .spawn()
-            .expect("Failed to launch osu!");
+        let child_future = tokio::spawn(async move {
+            let mut osu_process = Command::new(launcher.config.osu_executable_path)
+                .spawn()
+                .expect("Failed to launch osu!");
 
-        process_list.push(osu_process);
+            osu_process.wait().expect("Failed to wait for osu!");
+        });
+
+        process_list.push(child_future);
     }
 
     if file_exists(&launcher.config.rewind_executable_path) {
-        let rewind_process = Command::new(launcher.config.rewind_executable_path)
-            .spawn()
-            .expect("Failed to launch Rewind");
+        let child_future = tokio::spawn(async move {
+            let mut rewind_process = Command::new(launcher.config.rewind_executable_path)
+                .spawn()
+                .expect("Failed to launch Rewind");
 
-        process_list.push(rewind_process);
+            rewind_process.wait().expect("Failed to wait for Rewind");
+        });
+
+        process_list.push(child_future);
     }
 
     if file_exists(&launcher.config.danser_executable_path)
         && path_exists(&launcher.config.danser_out_dir)
     {
-        _watcher = Some(
-            notify::recommended_watcher(move |res: Result<Event, _>| match res {
-                Ok(event) => match event.kind {
-                    EventKind::Create(_) => {
-                        let full_path = event.paths[0].to_str().unwrap();
-                        let file_name =
-                            Path::new(&full_path).file_name().unwrap().to_str().unwrap();
+        let watcher_task = tokio::task::spawn_blocking(move || {
+            let mut _watcher =
+                notify::recommended_watcher(move |res: Result<Event, _>| match res {
+                    Ok(event) => match event.kind {
+                        EventKind::Create(_) => {
+                            let full_path = event.paths[0].to_str().unwrap();
+                            let file_name =
+                                Path::new(&full_path).file_name().unwrap().to_str().unwrap();
 
-                        println!("Rendering replay: {}", file_name);
+                            // if R key is held at this moment
+                            if is_async_key_pressed(0x52).unwrap_or(false) {
+                                println!("Rendering replay: {}", file_name);
 
-                        // if R key is held at this moment
-                        if is_async_key_pressed(0x52).unwrap_or(false) {
-                            Command::new(launcher.config.danser_executable_path.clone())
-                                .arg(format!("--out={}", file_name))
-                                .arg(format!(
-                                    "--settings={}",
-                                    launcher.config.danser_settings_name
-                                ))
-                                .arg(format!("--replay={}", full_path))
-                                .spawn()
-                                .expect("Failed to launch Danser");
+                                Command::new(launcher.config.danser_executable_path.clone())
+                                    .arg(format!("--out={}", file_name))
+                                    .arg(format!(
+                                        "--settings={}",
+                                        launcher.config.danser_settings_name
+                                    ))
+                                    .arg(format!("--replay={}", full_path))
+                                    .spawn()
+                                    .expect("Failed to launch Danser");
+                            }
                         }
-                    }
-                    _ => (),
-                },
-                Err(e) => panic!("Error watching directory: {}", e),
-            })
-            .unwrap(),
-        );
+                        _ => (),
+                    },
+                    Err(e) => panic!("Error watching directory: {}", e),
+                });
 
-        let replays_dir = Path::new(&launcher.config.replays_dir);
+            let replays_dir = Path::new(&launcher.config.replays_dir);
 
-        if let Some(ref mut watcher_value) = _watcher {
-            match watcher_value.watch(replays_dir, RecursiveMode::Recursive) {
-                Ok(_) => println!("Watching directory: {:?}", replays_dir),
-                Err(e) => panic!("Error watching directory: {}", e),
+            if let Ok(ref mut watcher_value) = _watcher {
+                match watcher_value.watch(replays_dir, RecursiveMode::Recursive) {
+                    Ok(_) => println!("Watching directory: {:?}", replays_dir),
+                    Err(e) => panic!("Error watching directory: {}", e),
+                }
             }
-        }
+
+            loop {
+                std::thread::sleep(std::time::Duration::from_secs(1));
+            }
+        });
+
+        process_list.push(watcher_task);
     }
 
     if file_exists(&launcher.config.open_tablet_driver_executable_path) {
-        let open_tablet_driver_process =
-            Command::new(launcher.config.open_tablet_driver_executable_path)
-                .spawn()
-                .expect("Failed to launch OpenTabletDriver");
+        let child_future = tokio::spawn(async move {
+            let mut open_tablet_driver_process =
+                Command::new(launcher.config.open_tablet_driver_executable_path)
+                    .spawn()
+                    .expect("Failed to launch OpenTabletDriver");
 
-        process_list.push(open_tablet_driver_process);
+            open_tablet_driver_process
+                .wait()
+                .expect("Failed to wait for OpenTabletDriver");
+        });
+
+        process_list.push(child_future);
     }
 
     if file_exists(&launcher.config.osu_trainer_executable_path) {
-        let osu_trainer_process = Command::new(launcher.config.osu_trainer_executable_path)
-            .spawn()
-            .expect("Failed to launch osu!trainer");
+        let child_future = tokio::spawn(async move {
+            let mut osu_trainer_process = Command::new(launcher.config.osu_trainer_executable_path)
+                .spawn()
+                .expect("Failed to launch osu!trainer");
 
-        process_list.push(osu_trainer_process);
+            osu_trainer_process
+                .wait()
+                .expect("Failed to wait for osu!trainer");
+        });
+
+        process_list.push(child_future);
     }
 
-    for mut process in process_list {
-        process.wait().expect("Failed to wait for process");
-    }
+    join_all(process_list).await;
 }
