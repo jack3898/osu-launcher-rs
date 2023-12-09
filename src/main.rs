@@ -8,6 +8,7 @@ use std::{
     process::{Child, Command},
 };
 use util::file::{file_exists, path_exists};
+use util::win::is_async_key_pressed;
 
 fn main() {
     // watcher is declared here because it needs to be in scope for the lifetime of the program
@@ -44,12 +45,18 @@ fn main() {
 
                         println!("Rendering replay: {}", file_name);
 
-                        Command::new(launcher.config.danser_executable_path.clone())
-                            .arg(format!("--out={}", file_name))
-                            .arg("--settings=default")
-                            .arg(format!("--replay={}", full_path))
-                            .spawn()
-                            .expect("Failed to launch Danser");
+                        // if R key is held at this moment
+                        if is_async_key_pressed(0x52).unwrap_or(false) {
+                            Command::new(launcher.config.danser_executable_path.clone())
+                                .arg(format!("--out={}", file_name))
+                                .arg(format!(
+                                    "--settings={}",
+                                    launcher.config.danser_settings_name
+                                ))
+                                .arg(format!("--replay={}", full_path))
+                                .spawn()
+                                .expect("Failed to launch Danser");
+                        }
                     }
                     _ => (),
                 },
