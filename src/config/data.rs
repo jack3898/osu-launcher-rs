@@ -3,11 +3,11 @@ use std::{env, path::Path};
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct ConfigData {
-    pub osu_path: String,
-    pub rewind_path: String,
-    pub danser_path: String,
-    pub open_tablet_driver_path: String,
-    pub osu_trainer_path: String,
+    pub osu_executable_path: String,
+    pub rewind_executable_path: String,
+    pub danser_executable_path: String,
+    pub open_tablet_driver_executable_path: String,
+    pub osu_trainer_executable_path: String,
     pub danser_out_dir: String,
     pub osu_trainer_setting_name: String,
 }
@@ -17,22 +17,22 @@ impl ConfigData {
         let app_data_location: String = ConfigData::get_app_data_location();
 
         ConfigData {
-            osu_path: Path::new(&app_data_location)
+            osu_executable_path: Path::new(&app_data_location)
                 .join("osu!")
                 .join("osu!.exe")
                 .to_string_lossy()
                 .into_owned(),
-            rewind_path: Path::new(&app_data_location)
+            rewind_executable_path: Path::new(&app_data_location)
                 .join("Programs")
                 .join("Rewind")
                 .join("Rewind.exe")
                 .to_string_lossy()
                 .into_owned(),
-            danser_path: String::from(""),
-            open_tablet_driver_path: String::from(""),
-            osu_trainer_path: String::from(""),
+            danser_executable_path: String::from(""),
+            open_tablet_driver_executable_path: String::from(""),
+            osu_trainer_executable_path: String::from(""),
             danser_out_dir: Path::new(&app_data_location)
-                .join("oau!")
+                .join("osu!")
                 .join("Danser recordings")
                 .to_string_lossy()
                 .into_owned(),

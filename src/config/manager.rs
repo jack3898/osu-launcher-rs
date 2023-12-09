@@ -1,4 +1,5 @@
 use crate::config::data::ConfigData;
+use crate::util::file::file_exists;
 use serde_json;
 use std::fs;
 use std::path::Path;
@@ -70,6 +71,6 @@ impl<'a> LauncherConfig<'a> {
     }
 
     fn config_file_exists(file_path: &'a str) -> bool {
-        Path::new(file_path).exists()
+        file_exists(file_path)
     }
 }
