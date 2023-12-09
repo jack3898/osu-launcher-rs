@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::env;
+use std::{env, path::Path};
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct ConfigData {
@@ -12,9 +12,20 @@ pub struct ConfigData {
 
 impl ConfigData {
     pub fn new() -> ConfigData {
+        let app_data_location: String = ConfigData::get_app_data_location();
+
         ConfigData {
-            osu_path: format!("{}\\osu!", ConfigData::get_app_data_location()),
-            rewind_path: String::from(""),
+            osu_path: Path::new(&app_data_location)
+                .join("osu!")
+                .join("osu!.exe")
+                .to_string_lossy()
+                .into_owned(),
+            rewind_path: Path::new(&app_data_location)
+                .join("Programs")
+                .join("Rewind")
+                .join("Rewind.exe")
+                .to_string_lossy()
+                .into_owned(),
             danser_path: String::from(""),
             open_tablet_driver_path: String::from(""),
             osu_trainer_path: String::from(""),
