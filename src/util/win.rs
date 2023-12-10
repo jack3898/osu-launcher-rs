@@ -1,3 +1,4 @@
+pub use dirs::*;
 use winapi::um::winuser;
 
 pub fn is_async_key_pressed(key: i32) -> Result<bool, String> {

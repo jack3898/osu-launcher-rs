@@ -1,8 +1,10 @@
 {
-	"osu_path": "C:\\Users\\Jack\\AppData\\Local\\osu!\\osu!.exe",
-	"rewind_path": "C:\\Users\\Jack\\AppData\\Local\\Programs\\Rewind\\Rewind.exe",
-	"danser_path": "C:\\Users\\Jack\\Downloads\\danser-0.9.1-win\\danser-cli.exe",
-	"open_tablet_driver_path": "C:\\Users\\Jack\\Downloads\\OpenTabletDriver.win-x64\\OpenTabletDriver.Daemon.exe",
-	"osu_trainer_path": "",
-	"osu_trainer_setting_name": "default"
-}
+	"osu_executable_path": "C:\\Users\\Jack\\AppData\\Local\\osu!\\osu!.exe",
+	"rewind_executable_path": "C:\\Users\\Jack\\AppData\\Local\\Programs\\Rewind\\Rewind.exe",
+	"danser_executable_path": "C:\\Users\\Jack\\Downloads\\danser-0.9.1-win\\danser-cli.exe",
+	"open_tablet_driver_executable_path": "",
+	"osu_trainer_executable_path": "",
+	"danser_out_dir": "C:\\Users\\Jack\\Downloads\\recs",
+	"danser_settings_name": "default",
+	"replays_dir": "C:\\Users\\Jack\\AppData\\Local\\osu!\\Replays"
+  }
