@@ -5,6 +5,7 @@ use crate::config::data::ConfigData;
 use crate::util::file::file_exists;
 use serde_json;
 
+#[derive(Clone)]
 pub struct LauncherConfig<'a> {
     pub file_path: &'a str,
     pub config: ConfigData,
