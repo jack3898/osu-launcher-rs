@@ -14,8 +14,6 @@ pub struct LauncherConfig<'a> {
 impl<'a> LauncherConfig<'a> {
     pub fn from(file_path: &'a str) -> LauncherConfig<'a> {
         if LauncherConfig::config_file_exists(file_path) {
-            println!("Config file exists, reading config file.");
-
             let current_config_file_data = LauncherConfig::read_config_file(file_path);
 
             return match current_config_file_data {
@@ -43,18 +41,16 @@ impl<'a> LauncherConfig<'a> {
     }
 
     fn create_config_file(&self) {
-        println!("Creating config file");
+        println!("Creating config file...");
 
         let config_data = serde_json::to_string_pretty(&self.config)
             .unwrap_or_else(|e| panic!("Error creating config data: {}", e));
-
-        println!("Config data: {}", config_data);
 
         let data: &str = &config_data;
         let config_file_path = Path::new(self.file_path);
 
         match fs::write(config_file_path, data) {
-            Ok(_) => println!("Successfully created config file"),
+            Ok(_) => println!("Successfully created config file!"),
             Err(e) => panic!("Error creating config file: {}", e),
         };
     }

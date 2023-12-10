@@ -56,34 +56,41 @@ impl ConfigData {
         // This is what will be written to the config file
         ConfigData {
             osu: OsuData {
+                enabled: true,
                 path: Some(osu_path),
                 executable_name: Some(String::from("osu!.exe")),
                 replays_dir: Some(replays_path),
-                enabled: true,
             },
             rewind: RewindData {
+                enabled: false,
                 path: Some(rewind_path),
                 executable_name: Some(String::from("Rewind.exe")),
-                enabled: true,
             },
             danser: DanserData {
+                enabled: false,
                 path: Some(danser_path),
                 executable_name: Some(String::from("danser-cli.exe")),
                 settings_name: Some(String::from("default")),
-                download: true,
-                enabled: false,
+                source: Some(String::from(
+                    "https://github.com/Wieku/danser-go/releases/download/0.9.1/danser-0.9.1-win.zip",
+                )),
+                download: false,
             },
             open_tablet_driver: OpenTabletDriverData {
+                enabled: false,
                 path: Some(open_tablet_driver_path),
                 executable_name: Some(String::from("OpenTabletDriver.Daemon.exe")),
-                download: true,
-                enabled: false,
+                source: Some(String::from("https://github.com/OpenTabletDriver/OpenTabletDriver/releases/download/v0.6.3.0/OpenTabletDriver.win-x64.zip")),
+                download: false,
             },
             osu_trainer: OsuTrainerData {
+                enabled: false,
                 path: Some(osu_trainer_path),
                 executable_name: Some(String::from("osu-trainer-v1.7.0/osu-trainer.exe")),
-                download: true,
-                enabled: false,
+                source:  Some(String::from(
+                    "https://github.com/FunOrange/osu-trainer/releases/download/1.7.0/osu-trainer-v1.7.0.zip",
+                )),
+                download: false,
             },
         }
     }
@@ -145,6 +152,7 @@ pub struct DanserData {
     pub executable_name: Option<String>,
     pub settings_name: Option<String>,
     pub download: bool,
+    pub source: Option<String>,
     pub enabled: bool,
 }
 
@@ -159,9 +167,7 @@ impl AppData for DanserData {
     }
 
     fn get_public_download_url(&self) -> Option<String> {
-        Some(String::from(
-            "https://github.com/Wieku/danser-go/releases/download/0.9.1/danser-0.9.1-win.zip",
-        ))
+        self.source.clone()
     }
 }
 
@@ -169,6 +175,7 @@ impl AppData for DanserData {
 pub struct OpenTabletDriverData {
     pub path: Option<String>,
     pub executable_name: Option<String>,
+    pub source: Option<String>,
     pub download: bool,
     pub enabled: bool,
 }
@@ -184,9 +191,7 @@ impl AppData for OpenTabletDriverData {
     }
 
     fn get_public_download_url(&self) -> Option<String> {
-        Some(String::from(
-            "https://github.com/OpenTabletDriver/OpenTabletDriver/releases/download/v0.6.3.0/OpenTabletDriver.win-x64.zip",
-        ))
+        self.source.clone()
     }
 }
 
@@ -195,6 +200,7 @@ pub struct OsuTrainerData {
     pub path: Option<String>,
     pub executable_name: Option<String>,
     pub download: bool,
+    pub source: Option<String>,
     pub enabled: bool,
 }
 
@@ -209,8 +215,6 @@ impl AppData for OsuTrainerData {
     }
 
     fn get_public_download_url(&self) -> Option<String> {
-        Some(String::from(
-            "https://github.com/FunOrange/osu-trainer/releases/download/1.7.0/osu-trainer-v1.7.0.zip",
-        ))
+        self.source.clone()
     }
 }
