@@ -1,13 +1,33 @@
 use serde::{Deserialize, Serialize};
 use std::{env, path::Path};
 
-use crate::util::file::download_file_to;
+use crate::util::file::{download_file_to, extract_and_delete_zip, path_exists};
 use async_trait::async_trait;
 
 #[async_trait]
 pub trait AppData {
     fn get_path(&self) -> Option<String> {
         None
+    }
+
+    fn path_exists(&self) -> bool {
+        if self.get_path().is_none() {
+            return false;
+        }
+
+        let path = self.get_path().unwrap();
+
+        path_exists(&path)
+    }
+
+    fn executable_exists(&self) -> bool {
+        if self.get_executable_path().is_none() {
+            return false;
+        }
+
+        let executable_path = self.get_executable_path().unwrap();
+
+        path_exists(&executable_path)
     }
 
     fn get_executable_name(&self) -> Option<String> {
@@ -34,8 +54,8 @@ pub trait AppData {
         Some(executable_path)
     }
 
-    async fn download_application(&self, file_name: &str) -> Result<(), String> {
-        println!("Attempting to download {}...", file_name);
+    async fn download_application(&self) -> Result<(), String> {
+        let file_name = format!("{}.zip", uuid::Uuid::new_v4());
 
         if self.get_path().is_none() {
             return Err(String::from("Local path is not set"));
@@ -56,10 +76,13 @@ pub trait AppData {
         )
         .await;
 
-        match download {
-            Ok(_) => Ok(()),
-            Err(e) => Err(format!("Error downloading: {}", e)),
+        if download.is_err() {
+            return Err(format!("Error downloading: {}", download.err().unwrap()));
         }
+
+        extract_and_delete_zip(&download_destination).unwrap();
+
+        Ok(())
     }
 }
 
@@ -104,8 +127,8 @@ impl AppData for RewindData {
 pub struct DanserData {
     pub path: Option<String>,
     pub executable_name: Option<String>,
-    pub out_dir: Option<String>,
     pub settings_name: Option<String>,
+    pub download: bool,
     pub enabled: bool,
 }
 
@@ -130,6 +153,7 @@ impl AppData for DanserData {
 pub struct OpenTabletDriverData {
     pub path: Option<String>,
     pub executable_name: Option<String>,
+    pub download: bool,
     pub enabled: bool,
 }
 
@@ -154,6 +178,7 @@ impl AppData for OpenTabletDriverData {
 pub struct OsuTrainerData {
     pub path: Option<String>,
     pub executable_name: Option<String>,
+    pub download: bool,
     pub enabled: bool,
 }
 
@@ -189,14 +214,12 @@ impl ConfigData {
 
         let osu_path = Path::new(&app_data_location)
             .join("osu!")
-            // .join("osu!.exe")
             .to_string_lossy()
             .into_owned();
 
         let rewind_path = Path::new(&app_data_location)
             .join("Programs")
             .join("Rewind")
-            // .join("Rewind.exe")
             .to_string_lossy()
             .into_owned();
 
@@ -209,21 +232,18 @@ impl ConfigData {
         let danser_path = Path::new(".")
             .join("packages")
             .join("danser")
-            // .join("danser.exe")
             .to_string_lossy()
             .into_owned();
 
         let open_tablet_driver_path = Path::new(".")
             .join("packages")
             .join("opentabletdriver")
-            // .join("OpenTabletDriver.exe")
             .to_string_lossy()
             .into_owned();
 
         let osu_trainer_path = Path::new(".")
             .join("packages")
             .join("trainer")
-            // .join("osu-trainer.exe")
             .to_string_lossy()
             .into_owned();
 
@@ -241,19 +261,21 @@ impl ConfigData {
             },
             danser: DanserData {
                 path: Some(danser_path),
-                executable_name: Some(String::from("danser.exe")),
-                out_dir: None,
+                executable_name: Some(String::from("danser-cli.exe")),
                 settings_name: Some(String::from("default")),
+                download: true,
                 enabled: false,
             },
             open_tablet_driver: OpenTabletDriverData {
                 path: Some(open_tablet_driver_path),
-                executable_name: Some(String::from("OpenTabletDriver.exe")),
+                executable_name: Some(String::from("OpenTabletDriver.Daemon.exe")),
+                download: true,
                 enabled: false,
             },
             osu_trainer: OsuTrainerData {
                 path: Some(osu_trainer_path),
-                executable_name: Some(String::from("osu-trainer.exe")),
+                executable_name: Some(String::from("osu-trainer-v1.7.0/osu-trainer.exe")),
+                download: true,
                 enabled: false,
             },
         }

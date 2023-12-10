@@ -14,4 +14,6 @@ reqwest = "0.11.22"
 serde = { version = "1.0.193", features = ["derive"] }
 serde_json = "1.0.108"
 tokio = { version = "1.35.0", features = ["full"] }
+uuid = { version = "1.6.1", features = ["v4"] }
 winapi = { version = "0.3.9", features = ["winuser"] }
+zip = "0.6.6"
