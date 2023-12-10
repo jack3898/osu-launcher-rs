@@ -19,21 +19,18 @@ pub struct DanserData {
     pub executable_path: Option<String>,
     pub out_dir: Option<String>,
     pub settings_name: Option<String>,
-    pub download_url: Option<String>,
     pub enabled: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct OpenTabletDriverData {
     pub executable_path: Option<String>,
-    pub download_url: Option<String>,
     pub enabled: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct OsuTrainerData {
     pub executable_path: Option<String>,
-    pub download_url: Option<String>,
     pub enabled: bool,
 }
 
@@ -69,6 +66,27 @@ impl ConfigData {
             .to_string_lossy()
             .into_owned();
 
+        let danser_executable_path = Path::new(".")
+            .join("packages")
+            .join("danser")
+            .join("danser.exe")
+            .to_string_lossy()
+            .into_owned();
+
+        let open_tablet_driver_executable_path = Path::new(".")
+            .join("packages")
+            .join("opentabletdriver")
+            .join("OpenTabletDriver.exe")
+            .to_string_lossy()
+            .into_owned();
+
+        let osu_trainer_executable_path = Path::new(".")
+            .join("packages")
+            .join("trainer")
+            .join("osu-trainer.exe")
+            .to_string_lossy()
+            .into_owned();
+
         ConfigData {
             osu: OsuData {
                 executable_path: Some(osu_executable_path),
@@ -80,20 +98,17 @@ impl ConfigData {
                 enabled: true,
             },
             danser: DanserData {
-                executable_path: None,
+                executable_path: Some(danser_executable_path),
                 out_dir: None,
                 settings_name: Some(String::from("default")),
-                download_url: None,
                 enabled: false,
             },
             open_tablet_driver: OpenTabletDriverData {
-                executable_path: None,
-                download_url: None,
+                executable_path: Some(open_tablet_driver_executable_path),
                 enabled: false,
             },
             osu_trainer: OsuTrainerData {
-                executable_path: None,
-                download_url: None,
+                executable_path: Some(osu_trainer_executable_path),
                 enabled: false,
             },
         }
