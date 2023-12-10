@@ -1,17 +1,17 @@
 mod config;
 mod util;
 
-use config::data::AppData;
+use std::{path::Path, process::Command};
+
 use config::manager::LauncherConfig;
+use config::traits::app_data::AppData;
 use futures::future::join_all;
 use notify::{Event, EventKind, RecursiveMode, Watcher};
-use std::{path::Path, process::Command};
 use util::general::unwrap_all_option;
 use util::win::is_async_key_pressed;
 
 #[tokio::main]
 async fn main() {
-    // watcher is declared here because it needs to be in scope for the lifetime of the program
     let mut process_list = Vec::new();
     let launcher = LauncherConfig::from("./launcher_config.json");
 

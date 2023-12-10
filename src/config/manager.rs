@@ -1,8 +1,9 @@
+use std::fs;
+use std::path::Path;
+
 use crate::config::data::ConfigData;
 use crate::util::file::file_exists;
 use serde_json;
-use std::fs;
-use std::path::Path;
 
 pub struct LauncherConfig<'a> {
     pub file_path: &'a str,
