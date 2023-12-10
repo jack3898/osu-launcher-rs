@@ -20,9 +20,15 @@ Really Osu Launcher Rs is just a lightweight executable that opens more executab
 
 _Note: Windows is only supported_
 
+## Additional features
+On first launch, this application will auto-download binaries it is not sure where to check. This includes Danser, Osu! Trainer and Open Tablet Driver. This will create a `packages` directory next to this application where those programs will live.
+
+You may delete the `packages` directory and amend the launcher config JSON file that is generated. Set `download` to false for the apps you do not want to download and change the necessary paths to the ones on your machine.
+
+Otherwise, feel free to keep using the auto-downloaded applications!
+
 ## WIP features
 
-- Auto download apps. This launcher has some sensible defaults for config and can try to work out on its own the likely location of where some applications live. However, some apps like Osu! Trainer and Danser can live as simple executable anywhere on your machine, so by default the config path for this is `null`. I will work on a feature that will allow an auto-download of these applications to a directory that sits next to the launcher, so you can worry less about configuration!
 - GUI. A GUI would be cool to change the config. But I will look into this last as I would like all the core features to be implemented first.
 
 ## Setup
