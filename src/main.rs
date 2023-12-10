@@ -1,6 +1,7 @@
 mod config;
 mod util;
 
+use config::data::AppData;
 use config::manager::LauncherConfig;
 use futures::future::join_all;
 use notify::{Event, EventKind, RecursiveMode, Watcher};
@@ -15,7 +16,28 @@ async fn main() {
     let mut process_list = Vec::new();
     let launcher = LauncherConfig::from("./launcher_config.json");
 
-    if let Some(osu_executable_path) = launcher.config.osu.executable_path.clone() {
+    // launcher
+    //     .config
+    //     .danser
+    //     .download_application("danser.zip")
+    //     .await
+    //     .unwrap();
+
+    // launcher
+    //     .config
+    //     .osu_trainer
+    //     .download_application("trainer.zip")
+    //     .await
+    //     .unwrap();
+
+    // launcher
+    //     .config
+    //     .open_tablet_driver
+    //     .download_application("opentabletdriver.zip")
+    //     .await
+    //     .unwrap();
+
+    if let Some(osu_executable_path) = launcher.config.osu.get_executable_path() {
         if file_exists(&osu_executable_path) {
             let child_future = tokio::spawn(async move {
                 let mut osu_process = Command::new(osu_executable_path)
@@ -29,7 +51,7 @@ async fn main() {
         }
     }
 
-    if let Some(rewind_executable_path) = launcher.config.rewind.executable_path.clone() {
+    if let Some(rewind_executable_path) = launcher.config.rewind.get_executable_path() {
         if !file_exists(&rewind_executable_path) {
             let child_future = tokio::spawn(async move {
                 let mut rewind_process = Command::new(rewind_executable_path)
@@ -44,7 +66,7 @@ async fn main() {
     }
 
     let danser_options = unwrap_all_option(vec![
-        launcher.config.danser.executable_path.clone(),
+        launcher.config.danser.get_executable_path(),
         launcher.config.danser.out_dir.clone(),
         launcher.config.danser.settings_name.clone(),
         launcher.config.osu.replays_dir.clone(),
@@ -101,8 +123,8 @@ async fn main() {
     }
 
     let open_tablet_driver_options = unwrap_all_option(vec![
-        launcher.config.open_tablet_driver.executable_path.clone(),
-        launcher.config.osu.executable_path.clone(),
+        launcher.config.open_tablet_driver.get_executable_path(),
+        launcher.config.osu.get_executable_path(),
     ]);
 
     if let Some(open_tablet_driver_options) = open_tablet_driver_options {
@@ -125,7 +147,7 @@ async fn main() {
         }
     }
 
-    if let Some(osu_trainer_executable_path) = launcher.config.osu_trainer.executable_path.clone() {
+    if let Some(osu_trainer_executable_path) = launcher.config.osu_trainer.get_executable_path() {
         if file_exists(&osu_trainer_executable_path) {
             let child_future = tokio::spawn(async move {
                 let mut osu_trainer_process = Command::new(osu_trainer_executable_path)
