@@ -9,6 +9,10 @@ use crate::{
 };
 
 pub fn try_spawn_osu_process(launcher_config: LauncherConfig) -> Option<JoinHandle<()>> {
+    if !launcher_config.config.osu.enabled {
+        return None;
+    }
+
     if let Some(osu_executable_path) = launcher_config.config.osu.get_executable_path() {
         if launcher_config.config.osu.executable_exists() {
             let child_future = tokio::spawn(async move {
@@ -27,6 +31,10 @@ pub fn try_spawn_osu_process(launcher_config: LauncherConfig) -> Option<JoinHand
 }
 
 pub fn try_spawn_rewind_process(launcher_config: LauncherConfig) -> Option<JoinHandle<()>> {
+    if !launcher_config.config.rewind.enabled {
+        return None;
+    }
+
     if let Some(rewind_executable_path) = launcher_config.config.rewind.get_executable_path() {
         if launcher_config.config.rewind.executable_exists() {
             let child_future = tokio::spawn(async move {
@@ -45,6 +53,10 @@ pub fn try_spawn_rewind_process(launcher_config: LauncherConfig) -> Option<JoinH
 }
 
 pub fn try_spawn_danser_process(launcher_config: LauncherConfig) -> Option<JoinHandle<()>> {
+    if !launcher_config.config.danser.enabled {
+        return None;
+    }
+
     let danser_options = unwrap_all_option(vec![
         launcher_config.config.danser.get_executable_path(),
         launcher_config.config.danser.settings_name.clone(),
@@ -107,6 +119,10 @@ pub fn try_spawn_danser_process(launcher_config: LauncherConfig) -> Option<JoinH
 pub fn try_spawn_open_tablet_driver_process(
     launcher_config: LauncherConfig,
 ) -> Option<JoinHandle<()>> {
+    if !launcher_config.config.open_tablet_driver.enabled {
+        return None;
+    }
+
     if let Some(open_tablet_driver_executable_path) = launcher_config
         .config
         .open_tablet_driver
@@ -136,6 +152,10 @@ pub fn try_spawn_open_tablet_driver_process(
 }
 
 pub fn try_spawn_osu_trainer_process(launcher_config: LauncherConfig) -> Option<JoinHandle<()>> {
+    if !launcher_config.config.osu_trainer.enabled {
+        return None;
+    }
+
     if let Some(osu_trainer_executable_path) =
         launcher_config.config.osu_trainer.get_executable_path()
     {
