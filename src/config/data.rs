@@ -1,18 +1,49 @@
 use serde::{Deserialize, Serialize};
 use std::{env, path::Path};
 
-use crate::util::win;
+#[derive(Serialize, Deserialize, Clone)]
+pub struct OsuData {
+    pub executable_path: Option<String>,
+    pub replays_dir: Option<String>,
+    pub enabled: bool,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct RewindData {
+    pub executable_path: Option<String>,
+    pub enabled: bool,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct DanserData {
+    pub executable_path: Option<String>,
+    pub out_dir: Option<String>,
+    pub settings_name: Option<String>,
+    pub download_url: Option<String>,
+    pub enabled: bool,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct OpenTabletDriverData {
+    pub executable_path: Option<String>,
+    pub download_url: Option<String>,
+    pub enabled: bool,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct OsuTrainerData {
+    pub executable_path: Option<String>,
+    pub download_url: Option<String>,
+    pub enabled: bool,
+}
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct ConfigData {
-    pub osu_executable_path: Option<String>,
-    pub rewind_executable_path: Option<String>,
-    pub danser_executable_path: Option<String>,
-    pub open_tablet_driver_executable_path: Option<String>,
-    pub osu_trainer_executable_path: Option<String>,
-    pub danser_out_dir: Option<String>,
-    pub danser_settings_name: Option<String>,
-    pub replays_dir: Option<String>,
+    pub osu: OsuData,
+    pub rewind: RewindData,
+    pub danser: DanserData,
+    pub open_tablet_driver: OpenTabletDriverData,
+    pub osu_trainer: OsuTrainerData,
 }
 
 impl ConfigData {
@@ -38,20 +69,33 @@ impl ConfigData {
             .to_string_lossy()
             .into_owned();
 
-        let danser_out_dir = match win::video_dir() {
-            Some(video_dir) => Some(video_dir.to_string_lossy().into_owned()),
-            None => None,
-        };
-
         ConfigData {
-            osu_executable_path: Some(osu_executable_path),
-            rewind_executable_path: Some(rewind_executable_path),
-            danser_executable_path: None,
-            open_tablet_driver_executable_path: None,
-            osu_trainer_executable_path: None,
-            danser_out_dir: danser_out_dir,
-            replays_dir: Some(replays_dir),
-            danser_settings_name: Some(String::from("default")),
+            osu: OsuData {
+                executable_path: Some(osu_executable_path),
+                replays_dir: Some(replays_dir),
+                enabled: true,
+            },
+            rewind: RewindData {
+                executable_path: Some(rewind_executable_path),
+                enabled: true,
+            },
+            danser: DanserData {
+                executable_path: None,
+                out_dir: None,
+                settings_name: Some(String::from("default")),
+                download_url: None,
+                enabled: false,
+            },
+            open_tablet_driver: OpenTabletDriverData {
+                executable_path: None,
+                download_url: None,
+                enabled: false,
+            },
+            osu_trainer: OsuTrainerData {
+                executable_path: None,
+                download_url: None,
+                enabled: false,
+            },
         }
     }
 
