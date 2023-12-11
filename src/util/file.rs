@@ -32,7 +32,7 @@ pub async fn download_file_to(url: &str, dest: &str) -> Result<(), Box<dyn std::
     Ok(())
 }
 
-pub fn extract_and_delete_zip(zip_path: &str) -> std::io::Result<()> {
+pub fn extract_zip(zip_path: &str) -> std::io::Result<()> {
     let file = File::open(zip_path)?;
     let mut archive = ZipArchive::new(BufReader::new(file))?;
 
@@ -63,8 +63,9 @@ pub fn extract_and_delete_zip(zip_path: &str) -> std::io::Result<()> {
         }
     }
 
-    // Delete the original zip file
-    std::fs::remove_file(zip_path)?;
-
     Ok(())
+}
+
+pub fn delete_file(path: &str) -> std::io::Result<()> {
+    std::fs::remove_file(path)
 }

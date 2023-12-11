@@ -7,7 +7,7 @@ use std::io::stdin;
 use config::manager::LauncherConfig;
 use config::traits::app_data::Application;
 use futures::future::join_all;
-use util::file::{extract_and_delete_zip, file_exists};
+use util::file::{delete_file, extract_zip, file_exists};
 
 #[tokio::main]
 async fn main() {
@@ -24,14 +24,14 @@ async fn main() {
         return;
     }
 
-    let mut download_handles = vec![];
+    let mut download_futures = vec![];
 
     if launcher_config.config.osu_trainer.can_download() {
         println!("Downloading and extracting Osu! Trainer...");
 
         let download = launcher_config.config.osu_trainer.download();
 
-        download_handles.push(download);
+        download_futures.push(download);
     }
 
     if launcher_config.config.danser.can_download() {
@@ -39,7 +39,7 @@ async fn main() {
 
         let download = launcher_config.config.danser.download();
 
-        download_handles.push(download);
+        download_futures.push(download);
     }
 
     if launcher_config.config.open_tablet_driver.can_download() {
@@ -47,15 +47,20 @@ async fn main() {
 
         let download = launcher_config.config.open_tablet_driver.download();
 
-        download_handles.push(download);
+        download_futures.push(download);
     }
 
-    let download_status = join_all(download_handles).await;
+    let download_path_results = join_all(download_futures).await;
 
-    for status in download_status {
-        match status {
-            Ok(destination) => extract_and_delete_zip(&destination)
-                .expect(format!("Failed to extract {}", destination).as_str()),
+    for download_path_result in download_path_results {
+        match download_path_result {
+            Ok(zip_location) => {
+                extract_zip(&zip_location)
+                    .expect(format!("Failed to extract {}", zip_location).as_str());
+
+                delete_file(&zip_location)
+                    .expect(format!("Failed to delete {}", zip_location).as_str());
+            }
             Err(error) => {
                 println!("Error downloading file: {}", error);
             }
