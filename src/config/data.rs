@@ -60,7 +60,6 @@ impl ConfigData {
                 enabled: true,
                 path: Some(osu_path),
                 executable_name: Some(String::from("osu!.exe")),
-                replays_dir: Some(replays_path.clone()),
             },
             rewind: RewindData {
                 enabled: false,
@@ -115,7 +114,6 @@ impl ConfigData {
 pub struct OsuData {
     pub path: Option<String>,
     pub executable_name: Option<String>,
-    pub replays_dir: Option<String>,
     pub enabled: bool,
 }
 
