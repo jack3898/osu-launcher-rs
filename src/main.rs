@@ -5,7 +5,7 @@ mod util;
 use std::io::stdin;
 
 use config::manager::LauncherConfig;
-use config::traits::app_data::AppData;
+use config::traits::app_data::Application;
 use futures::future::join_all;
 use tokio::task::JoinHandle;
 use util::file::file_exists;
@@ -62,13 +62,14 @@ async fn main() {
             .unwrap();
     }
 
-    let osu_process_handle = process::try_spawn_osu_process(launcher_config.clone());
-    let rewind_process_handle = process::try_spawn_rewind_process(launcher_config.clone());
-    let danser_process_handle = process::try_spawn_danser_process(launcher_config.clone());
-    let open_tablet_driver_process_handle =
-        process::try_spawn_open_tablet_driver_process(launcher_config.clone());
-    let osu_trainer_process_handle =
-        process::try_spawn_osu_trainer_process(launcher_config.clone());
+    let osu_process_handle = launcher_config.config.osu.try_spawn_process();
+    let rewind_process_handle = launcher_config.config.rewind.try_spawn_process();
+    let danser_process_handle = launcher_config.config.danser.try_spawn_process();
+    let open_tablet_driver_process_handle = launcher_config
+        .config
+        .open_tablet_driver
+        .try_spawn_process();
+    let osu_trainer_process_handle = launcher_config.config.osu_trainer.try_spawn_process();
 
     let mut process_list: Vec<JoinHandle<()>> = Vec::new();
 

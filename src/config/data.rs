@@ -1,8 +1,9 @@
 use std::{env, path::Path};
 
-use crate::config::traits::app_data::AppData;
+use crate::{config::traits::app_data::Application, process::try_spawn_danser_process};
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
+use tokio::task::JoinHandle;
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct ConfigData {
@@ -59,7 +60,7 @@ impl ConfigData {
                 enabled: true,
                 path: Some(osu_path),
                 executable_name: Some(String::from("osu!.exe")),
-                replays_dir: Some(replays_path),
+                replays_dir: Some(replays_path.clone()),
             },
             rewind: RewindData {
                 enabled: false,
@@ -71,6 +72,7 @@ impl ConfigData {
                 path: Some(danser_path),
                 executable_name: Some(String::from("danser-cli.exe")),
                 settings_name: Some(String::from("default")),
+                osu_replays_path: Some(replays_path),
                 source: Some(String::from(
                     "https://github.com/Wieku/danser-go/releases/download/0.9.1/danser-0.9.1-win.zip",
                 )),
@@ -118,7 +120,11 @@ pub struct OsuData {
 }
 
 #[async_trait]
-impl AppData for OsuData {
+impl Application for OsuData {
+    fn get_enabled(&self) -> bool {
+        self.enabled
+    }
+
     fn get_path(&self) -> Option<String> {
         self.path.clone()
     }
@@ -136,7 +142,11 @@ pub struct RewindData {
 }
 
 #[async_trait]
-impl AppData for RewindData {
+impl Application for RewindData {
+    fn get_enabled(&self) -> bool {
+        self.enabled
+    }
+
     fn get_path(&self) -> Option<String> {
         self.path.clone()
     }
@@ -151,13 +161,18 @@ pub struct DanserData {
     pub path: Option<String>,
     pub executable_name: Option<String>,
     pub settings_name: Option<String>,
+    pub osu_replays_path: Option<String>,
     pub download: bool,
     pub source: Option<String>,
     pub enabled: bool,
 }
 
 #[async_trait]
-impl AppData for DanserData {
+impl Application for DanserData {
+    fn get_enabled(&self) -> bool {
+        self.enabled
+    }
+
     fn get_path(&self) -> Option<String> {
         self.path.clone()
     }
@@ -168,6 +183,10 @@ impl AppData for DanserData {
 
     fn get_public_download_url(&self) -> Option<String> {
         self.source.clone()
+    }
+
+    fn try_spawn_process(&self) -> Option<JoinHandle<()>> {
+        try_spawn_danser_process(self)
     }
 }
 
@@ -181,7 +200,11 @@ pub struct OpenTabletDriverData {
 }
 
 #[async_trait]
-impl AppData for OpenTabletDriverData {
+impl Application for OpenTabletDriverData {
+    fn get_enabled(&self) -> bool {
+        self.enabled
+    }
+
     fn get_path(&self) -> Option<String> {
         self.path.clone()
     }
@@ -205,7 +228,11 @@ pub struct OsuTrainerData {
 }
 
 #[async_trait]
-impl AppData for OsuTrainerData {
+impl Application for OsuTrainerData {
+    fn get_enabled(&self) -> bool {
+        self.enabled
+    }
+
     fn get_path(&self) -> Option<String> {
         self.path.clone()
     }

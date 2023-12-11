@@ -4,70 +4,26 @@ use notify::{Event, EventKind, RecursiveMode, Watcher};
 use tokio::task::JoinHandle;
 
 use crate::{
-    config::{manager::LauncherConfig, traits::app_data::AppData},
+    config::{data::DanserData, traits::app_data::Application},
     util::{general::unwrap_all_option, win::is_async_key_pressed},
 };
 
-pub fn try_spawn_osu_process(launcher_config: LauncherConfig) -> Option<JoinHandle<()>> {
-    if !launcher_config.config.osu.enabled {
-        return None;
-    }
-
-    if let Some(osu_executable_path) = launcher_config.config.osu.get_executable_path() {
-        if launcher_config.config.osu.executable_exists() {
-            let child_future = tokio::spawn(async move {
-                let mut osu_process = Command::new(osu_executable_path)
-                    .spawn()
-                    .expect("Failed to launch osu!");
-
-                osu_process.wait().expect("Failed to wait for osu!");
-            });
-
-            return Some(child_future);
-        }
-    }
-
-    None
-}
-
-pub fn try_spawn_rewind_process(launcher_config: LauncherConfig) -> Option<JoinHandle<()>> {
-    if !launcher_config.config.rewind.enabled {
-        return None;
-    }
-
-    if let Some(rewind_executable_path) = launcher_config.config.rewind.get_executable_path() {
-        if launcher_config.config.rewind.executable_exists() {
-            let child_future = tokio::spawn(async move {
-                let mut rewind_process = Command::new(rewind_executable_path)
-                    .spawn()
-                    .expect("Failed to launch Rewind");
-
-                rewind_process.wait().expect("Failed to wait for Rewind");
-            });
-
-            return Some(child_future);
-        }
-    }
-
-    None
-}
-
-pub fn try_spawn_danser_process(launcher_config: LauncherConfig) -> Option<JoinHandle<()>> {
-    if !launcher_config.config.danser.enabled {
+pub fn try_spawn_danser_process(app: &DanserData) -> Option<JoinHandle<()>> {
+    if !app.get_enabled() {
         return None;
     }
 
     let danser_options = unwrap_all_option(vec![
-        launcher_config.config.danser.get_executable_path(),
-        launcher_config.config.danser.settings_name.clone(),
-        launcher_config.config.osu.replays_dir.clone(),
+        app.get_executable_path(),
+        app.settings_name.clone(),
+        app.osu_replays_path.clone(),
     ]);
 
     if let Some(danser_options) = danser_options {
         let [danser_executable_path, danser_settings_name, replays_dir] =
             danser_options.try_into().unwrap();
 
-        if launcher_config.config.danser.executable_exists() {
+        if app.executable_exists() {
             let watcher_task = tokio::task::spawn_blocking(move || {
                 let mut _watcher =
                     notify::recommended_watcher(move |res: Result<Event, _>| match res {
@@ -110,67 +66,6 @@ pub fn try_spawn_danser_process(launcher_config: LauncherConfig) -> Option<JoinH
             });
 
             return Some(watcher_task);
-        }
-    }
-
-    None
-}
-
-pub fn try_spawn_open_tablet_driver_process(
-    launcher_config: LauncherConfig,
-) -> Option<JoinHandle<()>> {
-    if !launcher_config.config.open_tablet_driver.enabled {
-        return None;
-    }
-
-    if let Some(open_tablet_driver_executable_path) = launcher_config
-        .config
-        .open_tablet_driver
-        .get_executable_path()
-    {
-        if launcher_config
-            .config
-            .open_tablet_driver
-            .executable_exists()
-        {
-            let child_future = tokio::spawn(async move {
-                let mut open_tablet_driver_process =
-                    Command::new(open_tablet_driver_executable_path)
-                        .spawn()
-                        .expect("Failed to launch OpenTabletDriver");
-
-                open_tablet_driver_process
-                    .wait()
-                    .expect("Failed to wait for OpenTabletDriver");
-            });
-
-            return Some(child_future);
-        }
-    }
-
-    None
-}
-
-pub fn try_spawn_osu_trainer_process(launcher_config: LauncherConfig) -> Option<JoinHandle<()>> {
-    if !launcher_config.config.osu_trainer.enabled {
-        return None;
-    }
-
-    if let Some(osu_trainer_executable_path) =
-        launcher_config.config.osu_trainer.get_executable_path()
-    {
-        if launcher_config.config.osu_trainer.executable_exists() {
-            let child_future = tokio::spawn(async move {
-                let mut osu_trainer_process = Command::new(osu_trainer_executable_path)
-                    .spawn()
-                    .expect("Failed to launch osu!trainer");
-
-                osu_trainer_process
-                    .wait()
-                    .expect("Failed to wait for osu!trainer");
-            });
-
-            return Some(child_future);
         }
     }
 

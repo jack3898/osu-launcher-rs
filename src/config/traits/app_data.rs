@@ -1,10 +1,15 @@
-use std::path::Path;
+use std::{path::Path, process::Command};
 
 use crate::util::file::{download_file_to, extract_and_delete_zip, path_exists};
 use async_trait::async_trait;
+use tokio::task::JoinHandle;
 
 #[async_trait]
-pub trait AppData {
+pub trait Application {
+    fn get_enabled(&self) -> bool {
+        false
+    }
+
     fn get_path(&self) -> Option<String> {
         None
     }
@@ -82,5 +87,25 @@ pub trait AppData {
         extract_and_delete_zip(&download_destination).unwrap();
 
         Ok(())
+    }
+
+    fn try_spawn_process(&self) -> Option<JoinHandle<()>> {
+        if !self.get_enabled() || !self.executable_exists() {
+            return None;
+        }
+
+        if let Some(executable_path) = self.get_executable_path() {
+            let child_future = tokio::spawn(async move {
+                let mut process = Command::new(executable_path)
+                    .spawn()
+                    .expect("Failed to launch!");
+
+                process.wait().expect("Failed to wait for process!");
+            });
+
+            return Some(child_future);
+        }
+
+        None
     }
 }
