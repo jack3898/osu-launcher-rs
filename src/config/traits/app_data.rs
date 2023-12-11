@@ -1,6 +1,6 @@
 use std::{path::Path, process::Command};
 
-use crate::util::file::{download_file_to, extract_and_delete_zip, path_exists};
+use crate::util::file::{download_file_to, path_exists};
 use async_trait::async_trait;
 use tokio::task::JoinHandle;
 
@@ -58,25 +58,27 @@ pub trait Application {
         Some(executable_path)
     }
 
-    async fn download_application(&self) -> Result<(), String> {
+    fn can_download(&self) -> bool {
+        self.get_enabled() && self.get_public_download_url().is_some() && !self.path_exists()
+    }
+
+    async fn download(&self) -> Result<String, String> {
+        if !self.can_download() {
+            return Err(String::from(
+                "Cannot download! Check the config is correct.",
+            ));
+        }
+
         let file_name = format!("{}.zip", uuid::Uuid::new_v4());
 
-        if self.get_path().is_none() {
-            return Err(String::from("Local path is not set"));
-        }
-
-        if self.get_public_download_url().is_none() {
-            return Err(String::from("Public download url is not set"));
-        }
-
-        let download_destination = Path::new(&self.get_path().unwrap())
+        let download_location = Path::new(&self.get_path().unwrap())
             .join(file_name)
             .to_string_lossy()
             .into_owned();
 
         let download = download_file_to(
             self.get_public_download_url().unwrap().as_str(),
-            &download_destination,
+            &download_location,
         )
         .await;
 
@@ -84,9 +86,7 @@ pub trait Application {
             return Err(format!("Error downloading: {}", download.err().unwrap()));
         }
 
-        extract_and_delete_zip(&download_destination).unwrap();
-
-        Ok(())
+        Ok(download_location)
     }
 
     fn try_spawn_process(&self) -> Option<JoinHandle<()>> {

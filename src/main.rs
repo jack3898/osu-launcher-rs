@@ -7,8 +7,7 @@ use std::io::stdin;
 use config::manager::LauncherConfig;
 use config::traits::app_data::Application;
 use futures::future::join_all;
-use tokio::task::JoinHandle;
-use util::file::file_exists;
+use util::file::{extract_and_delete_zip, file_exists};
 
 #[tokio::main]
 async fn main() {
@@ -25,73 +24,54 @@ async fn main() {
         return;
     }
 
-    if launcher_config.config.osu_trainer.download
-        && !launcher_config.config.osu_trainer.path_exists()
-    {
-        println!("Downloading Osu! Trainer...");
+    let mut download_handles = vec![];
 
-        launcher_config
-            .config
-            .osu_trainer
-            .download_application()
-            .await
-            .unwrap();
+    if launcher_config.config.osu_trainer.can_download() {
+        println!("Downloading and extracting Osu! Trainer...");
+
+        let download = launcher_config.config.osu_trainer.download();
+
+        download_handles.push(download);
     }
 
-    if launcher_config.config.danser.download && !launcher_config.config.danser.path_exists() {
-        println!("Downloading Danser...");
+    if launcher_config.config.danser.can_download() {
+        println!("Downloading and extracting Danser...");
 
-        launcher_config
-            .config
-            .danser
-            .download_application()
-            .await
-            .unwrap();
+        let download = launcher_config.config.danser.download();
+
+        download_handles.push(download);
     }
 
-    if launcher_config.config.open_tablet_driver.download
-        && !launcher_config.config.open_tablet_driver.path_exists()
-    {
-        println!("Downloading OpenTabletDriver...");
+    if launcher_config.config.open_tablet_driver.can_download() {
+        println!("Downloading and extracting OpenTabletDriver...");
 
-        launcher_config
-            .config
-            .open_tablet_driver
-            .download_application()
-            .await
-            .unwrap();
+        let download = launcher_config.config.open_tablet_driver.download();
+
+        download_handles.push(download);
     }
 
-    let osu_process_handle = launcher_config.config.osu.try_spawn_process();
-    let rewind_process_handle = launcher_config.config.rewind.try_spawn_process();
-    let danser_process_handle = launcher_config.config.danser.try_spawn_process();
-    let open_tablet_driver_process_handle = launcher_config
-        .config
-        .open_tablet_driver
-        .try_spawn_process();
-    let osu_trainer_process_handle = launcher_config.config.osu_trainer.try_spawn_process();
+    let download_status = join_all(download_handles).await;
 
-    let mut process_list: Vec<JoinHandle<()>> = Vec::new();
-
-    if osu_process_handle.is_some() {
-        process_list.push(osu_process_handle.unwrap());
+    for status in download_status {
+        match status {
+            Ok(destination) => extract_and_delete_zip(&destination)
+                .expect(format!("Failed to extract {}", destination).as_str()),
+            Err(error) => {
+                println!("Error downloading file: {}", error);
+            }
+        }
     }
 
-    if rewind_process_handle.is_some() {
-        process_list.push(rewind_process_handle.unwrap());
-    }
-
-    if danser_process_handle.is_some() {
-        process_list.push(danser_process_handle.unwrap());
-    }
-
-    if open_tablet_driver_process_handle.is_some() {
-        process_list.push(open_tablet_driver_process_handle.unwrap());
-    }
-
-    if osu_trainer_process_handle.is_some() {
-        process_list.push(osu_trainer_process_handle.unwrap());
-    }
+    let process_list: Vec<_> = [
+        &launcher_config.config.osu as &dyn Application,
+        &launcher_config.config.rewind as &dyn Application,
+        &launcher_config.config.danser as &dyn Application,
+        &launcher_config.config.open_tablet_driver as &dyn Application,
+        &launcher_config.config.osu_trainer as &dyn Application,
+    ]
+    .into_iter()
+    .filter_map(|config| config.try_spawn_process())
+    .collect();
 
     join_all(process_list).await;
 }

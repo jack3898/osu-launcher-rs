@@ -15,7 +15,6 @@ pub fn file_exists(path: &str) -> bool {
     Path::new(path).is_file()
 }
 
-#[allow(dead_code)] // TODO: Remove this, when feature to download and unzip is implemented
 pub async fn download_file_to(url: &str, dest: &str) -> Result<(), Box<dyn std::error::Error>> {
     let response = reqwest::get(Url::parse(url)?).await?;
     let dest_path = Path::new(dest);
