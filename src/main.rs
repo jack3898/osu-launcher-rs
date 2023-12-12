@@ -17,6 +17,7 @@ async fn main() {
 
     if first_launch {
         println!("First launch, please configure the launcher using the config file that was just created then run the launcher again.");
+        println!();
         println!("Press enter to exit...");
 
         stdin().read_line(&mut String::new()).unwrap();
@@ -55,11 +56,13 @@ async fn main() {
     for download_path_result in download_path_results {
         match download_path_result {
             Ok(zip_location) => {
-                extract_zip(&zip_location)
-                    .expect(format!("Failed to extract {}", zip_location).as_str());
+                let zip_location_str = zip_location.to_str().unwrap();
 
-                delete_file(&zip_location)
-                    .expect(format!("Failed to delete {}", zip_location).as_str());
+                extract_zip(&zip_location_str)
+                    .expect(format!("Failed to extract {}", zip_location_str).as_str());
+
+                delete_file(&zip_location_str)
+                    .expect(format!("Failed to delete {}", zip_location_str).as_str());
             }
             Err(error) => {
                 println!("Error downloading file: {}", error);
@@ -75,7 +78,14 @@ async fn main() {
         &launcher_config.config.osu_trainer as &dyn Application,
     ]
     .into_iter()
-    .filter_map(|config| config.try_spawn_process())
+    .filter_map(|config| match config.try_spawn_process() {
+        Ok(process) => Some(process),
+        Err(error) => {
+            println!("Error spawning process: {} - skipping", error);
+
+            None
+        }
+    })
     .collect();
 
     join_all(process_list).await;

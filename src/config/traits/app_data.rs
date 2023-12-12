@@ -1,6 +1,13 @@
-use std::{path::Path, process::Command};
+use std::{
+    path::{Path, PathBuf},
+    process::Command,
+};
 
-use crate::util::file::{download_file_to, path_exists};
+use super::super::error::app_data_error::AppDataError;
+use crate::{
+    config::error::app_process_error::AppProcessError,
+    util::file::{download_file_to, path_exists},
+};
 use async_trait::async_trait;
 use tokio::task::JoinHandle;
 
@@ -25,13 +32,16 @@ pub trait Application {
     }
 
     fn executable_exists(&self) -> bool {
-        if self.get_executable_path().is_none() {
+        if self.get_executable_path().is_err() {
             return false;
         }
 
-        let executable_path = self.get_executable_path().unwrap();
+        let executable_path = self.get_executable_path();
 
-        path_exists(&executable_path)
+        match executable_path {
+            Ok(path) => path_exists(path.to_str().unwrap()),
+            Err(_) => false,
+        }
     }
 
     fn get_executable_name(&self) -> Option<String> {
@@ -42,12 +52,16 @@ pub trait Application {
         None
     }
 
-    fn get_executable_path(&self) -> Option<String> {
+    fn get_executable_path(&self) -> Result<PathBuf, AppDataError> {
         let path = self.get_path();
         let executable_name = self.get_executable_name();
 
-        if path.is_none() || executable_name.is_none() {
-            return None;
+        if path.is_none() {
+            return Err(AppDataError::PathNotFound);
+        }
+
+        if executable_name.is_none() {
+            return Err(AppDataError::ExecutableNameNotFound);
         }
 
         let executable_path = Path::new(&path.unwrap())
@@ -55,57 +69,62 @@ pub trait Application {
             .to_string_lossy()
             .into_owned();
 
-        Some(executable_path)
+        Ok(PathBuf::from(executable_path))
     }
 
     fn can_download(&self) -> bool {
         self.get_enabled() && self.get_public_download_url().is_some() && !self.path_exists()
     }
 
-    async fn download(&self) -> Result<String, String> {
+    async fn download(&self) -> Result<PathBuf, AppDataError> {
         if !self.can_download() {
-            return Err(String::from(
-                "Cannot download! Check the config is correct.",
-            ));
+            return Err(AppDataError::DownloadDisabled);
         }
 
         let file_name = format!("{}.zip", uuid::Uuid::new_v4());
 
-        let download_location = Path::new(&self.get_path().unwrap())
+        let path_str = self.get_path().ok_or(AppDataError::PathNotFound)?;
+        let download_location_path = Path::new(&path_str);
+
+        let download_location = download_location_path
             .join(file_name)
             .to_string_lossy()
             .into_owned();
 
-        let download = download_file_to(
-            self.get_public_download_url().unwrap().as_str(),
-            &download_location,
-        )
-        .await;
+        let public_source_url = self
+            .get_public_download_url()
+            .ok_or(AppDataError::DownloadUrlNotFound)?;
 
-        if download.is_err() {
-            return Err(format!("Error downloading: {}", download.err().unwrap()));
-        }
+        download_file_to(public_source_url.as_str(), &download_location)
+            .await
+            .or(Err(AppDataError::DownloadFailed))?;
 
-        Ok(download_location)
+        Ok(PathBuf::from(download_location))
     }
 
-    fn try_spawn_process(&self) -> Option<JoinHandle<()>> {
+    fn try_spawn_process(
+        &self,
+    ) -> Result<JoinHandle<Result<std::process::ExitStatus, AppProcessError>>, AppProcessError>
+    {
         if !self.get_enabled() || !self.executable_exists() {
-            return None;
+            return Err(AppProcessError::AppNotFound);
         }
 
-        if let Some(executable_path) = self.get_executable_path() {
+        if let Ok(executable_path) = self.get_executable_path() {
             let child_future = tokio::spawn(async move {
-                let mut process = Command::new(executable_path)
-                    .spawn()
-                    .expect("Failed to launch!");
+                let mut process = Command::new(executable_path).spawn().map_err(|err| {
+                    AppProcessError::AppLaunchError(format!(
+                        "Failed to launch process: {}",
+                        err.to_string()
+                    ))
+                })?;
 
-                process.wait().expect("Failed to wait for process!");
+                process.wait().map_err(|_| AppProcessError::AppWaitError)
             });
 
-            return Some(child_future);
+            return Ok(child_future);
         }
 
-        None
+        Err(AppProcessError::AppNotFound)
     }
 }

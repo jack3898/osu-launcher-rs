@@ -3,7 +3,7 @@ use winapi::um::winuser;
 
 pub fn is_async_key_pressed(key: i32) -> Result<bool, String> {
     if key < 0 || key > 255 {
-        return Err(String::from("Invalid key code")); // Invalid key code
+        return Err("Invalid key code".to_string()); // Invalid key code
     }
 
     let result = unsafe { winuser::GetAsyncKeyState(key) };
