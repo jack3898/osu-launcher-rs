@@ -13,7 +13,7 @@ use util::file::{delete_file, extract_zip, file_exists};
 async fn main() {
     let config_file_path = "./launcher_config.json";
     let first_launch = !file_exists(config_file_path);
-    let launcher_config = LauncherConfig::from(config_file_path);
+    let launcher_config: LauncherConfig = config_file_path.into();
 
     if first_launch {
         println!("First launch, please configure the launcher using the config file that was just created then run the launcher again.");

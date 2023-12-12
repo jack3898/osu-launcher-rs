@@ -11,8 +11,8 @@ pub struct LauncherConfig<'a> {
     pub config: ConfigData,
 }
 
-impl<'a> LauncherConfig<'a> {
-    pub fn from(file_path: &'a str) -> LauncherConfig<'a> {
+impl<'a> From<&'a str> for LauncherConfig<'a> {
+    fn from(file_path: &'a str) -> LauncherConfig<'a> {
         if LauncherConfig::config_file_exists(file_path) {
             let current_config_file_data = LauncherConfig::read_config_file(file_path);
 
@@ -32,8 +32,6 @@ impl<'a> LauncherConfig<'a> {
             };
         }
 
-        println!("Config file does not exist, creating config file with defaults.");
-
         let config = LauncherConfig {
             file_path: file_path,
             config: ConfigData::new(),
@@ -43,7 +41,9 @@ impl<'a> LauncherConfig<'a> {
 
         return config;
     }
+}
 
+impl<'a> LauncherConfig<'a> {
     fn create_config_file(&self) {
         let config_data = serde_json::to_string_pretty(&self.config)
             .unwrap_or_else(|e| panic!("Error creating config data: {}", e));
