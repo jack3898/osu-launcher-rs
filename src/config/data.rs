@@ -1,6 +1,7 @@
 use std::{env, path::Path};
 
-use crate::{config::traits::app_data::Application, process::try_spawn_danser_process};
+use super::traits::app_data::Application;
+use crate::process::try_spawn_danser_process;
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use tokio::task::JoinHandle;
